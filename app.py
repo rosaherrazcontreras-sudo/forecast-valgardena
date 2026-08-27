@@ -2,7 +2,7 @@
 ===================================================================================
 FORECAST FINANCIERO Y PROYECCIÓN TRIBUTARIA - VALGARDENA / SCT SOLUCIONES
 Arquitectura: Streamlit + Google Sheets Connection + Plotly + Data Editor
-Versión: 4.0 (Diseño Corporativo Ultra-Legible, Alto Contraste & Corrección de Colores)
+Versión: 5.0 (Dark Executive Theme - Fondo Elegante Slate & Alto Contraste)
 ===================================================================================
 """
 
@@ -40,7 +40,7 @@ PORCENTAJE_REBAJA_14E = 0.50
 GASTOS_RECHAZADOS = 7_595_894
 
 # =============================================================================
-# ESTILOS CSS CORPORATIVOS DE ALTO CONTRASTE (CORRECCIÓN DE COLORES)
+# ESTILOS CSS DARK EXECUTIVE CORPORATIVO (FONDO OSCURO MODERNO Y ELEGANTE)
 # =============================================================================
 st.markdown(
     """
@@ -48,26 +48,23 @@ st.markdown(
       @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Lora:ital,wght@0,500;0,600;1,400&display=swap');
       
       :root {
-        --navy: #0b2239;
-        --ink: #0f1e2f;
-        --title-color: #0b2848;
-        --subtitle-color: #475569;
-        --muted: #64748b;
-        --line: #cbd5e1;
-        --card-bg: #ffffff;
-        --page-bg: #f8fafc;
-        --blue-primary: #1d4ed8;
-        --blue-accent: #2563eb;
-        --red-accent: #dc2626;
-        --green-accent: #059669;
-        --amber-accent: #d97706;
-        --purple-accent: #7c3aed;
+        --bg-main: #0b132b;          /* Fondo principal azul noche oscuro */
+        --bg-card: #1c2541;          /* Fondo de tarjetas slate oscuro */
+        --bg-card-alt: #131c35;      /* Fondo secundario */
+        --border-color: #2d3e66;     /* Borde sutil de alto contraste */
+        --text-primary: #f8fafc;     /* Texto blanco brillante */
+        --text-secondary: #94a3b8;   /* Texto gris slate claro */
+        --accent-blue: #38bdf8;      /* Azul cian brillante */
+        --accent-green: #10b981;     /* Verde esmeralda */
+        --accent-red: #f43f5e;       /* Rojo coral */
+        --accent-gold: #fbbf24;      /* Dorado */
       }
       
+      /* Aplicación general */
       html, body, [class*="css"], .stApp {
         font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
-        background-color: var(--page-bg) !important;
-        color: #1e293b !important;
+        background-color: var(--bg-main) !important;
+        color: var(--text-primary) !important;
       }
       
       [data-testid="stHeader"] { height: 0; background: transparent; }
@@ -78,12 +75,13 @@ st.markdown(
         padding: 1.5rem 2.5rem 3.5rem !important;
       }
       
+      /* Franja superior */
       .top-strip {
         position: fixed;
         z-index: 999;
         inset: 0 0 auto;
-        height: 8px;
-        background: linear-gradient(90deg, #0b2848 0%, #1e40af 50%, #059669 100%);
+        height: 6px;
+        background: linear-gradient(90deg, #38bdf8 0%, #3b82f6 50%, #10b981 100%);
       }
 
       /* Hero Header */
@@ -92,35 +90,35 @@ st.markdown(
         align-items: flex-end;
         justify-content: space-between;
         gap: 2rem;
-        margin: 0.5rem 0 1.25rem;
+        margin: 0.5rem 0 1.3rem;
       }
       .hero h1 {
         margin: 0;
-        color: var(--title-color) !important;
+        color: #ffffff !important;
         font-family: 'Lora', Georgia, serif !important;
-        font-size: clamp(2.2rem, 3.5vw, 3.2rem) !important;
+        font-size: clamp(2.3rem, 3.6vw, 3.3rem) !important;
         font-weight: 600 !important;
         letter-spacing: -0.03em;
         line-height: 1.05;
       }
       .hero p {
         margin: 0.5rem 0 0 !important;
-        color: var(--subtitle-color) !important;
+        color: var(--text-secondary) !important;
         font-size: 0.98rem !important;
       }
       
       .eyebrow, .section-label {
         margin: 0 0 0.35rem !important;
-        color: #1d4ed8 !important;
+        color: var(--accent-blue) !important;
         font-size: 0.72rem !important;
         font-weight: 800 !important;
-        letter-spacing: 0.12em !important;
+        letter-spacing: 0.14em !important;
         text-transform: uppercase !important;
       }
       
       .section-title {
         margin: 0 0 0.25rem !important;
-        color: #0b2848 !important;
+        color: #ffffff !important;
         font-family: 'Lora', Georgia, serif !important;
         font-size: 1.45rem !important;
         font-weight: 600 !important;
@@ -129,7 +127,7 @@ st.markdown(
       
       .editor-copy {
         margin: 0.35rem 0 0.75rem !important;
-        color: #475569 !important;
+        color: var(--text-secondary) !important;
         font-size: 0.85rem !important;
         line-height: 1.4;
       }
@@ -140,40 +138,40 @@ st.markdown(
         grid-template-columns: 7fr 5fr;
         width: min(420px, 36vw);
         overflow: hidden;
-        border: 1.5px solid #cbd5e1;
+        border: 1.5px solid var(--border-color);
         border-radius: 10px;
-        background: #ffffff;
-        color: #334155;
+        background: var(--bg-card);
+        color: var(--text-secondary);
         font-size: 0.75rem;
         font-weight: 700;
         text-align: center;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
       }
       .phase-track span { padding: 0.65rem 0.8rem; }
-      .phase-track span:first-child { background: #f8fafc; color: #475569; }
-      .phase-track span:last-child { background: #dbeafe; color: #1e40af; border-left: 1.5px solid #bfdbfe; }
+      .phase-track span:first-child { background: #131c35; color: #94a3b8; }
+      .phase-track span:last-child { background: #1e3a8a; color: #93c5fd; border-left: 1.5px solid #2d3e66; }
 
       /* Tarjetas de Métricas KPI */
       .metric-grid {
         display: grid;
         grid-template-columns: repeat(6, minmax(0, 1fr));
         gap: 0.85rem;
-        margin-bottom: 1.1rem;
+        margin-bottom: 1.15rem;
       }
       .metric-card {
         min-width: 0;
         min-height: 120px;
         padding: 1rem 1.1rem;
-        border: 1px solid #e2e8f0;
+        border: 1px solid var(--border-color);
         border-top: 4px solid var(--accent) !important;
         border-radius: 12px;
-        background: #ffffff;
-        box-shadow: 0 4px 12px rgba(15, 30, 47, 0.04);
+        background: var(--bg-card);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
         transition: transform 0.2s ease, box-shadow 0.2s ease;
       }
       .metric-card:hover {
         transform: translateY(-2px);
-        box-shadow: 0 8px 18px rgba(15, 30, 47, 0.07);
+        box-shadow: 0 10px 22px rgba(0, 0, 0, 0.35);
       }
       .metric-label {
         display: flex;
@@ -181,7 +179,7 @@ st.markdown(
         align-items: flex-start;
         justify-content: space-between;
         gap: 0.5rem;
-        color: #475569 !important;
+        color: #cbd5e1 !important;
         font-size: 0.72rem !important;
         font-weight: 800 !important;
         letter-spacing: 0.03em;
@@ -195,7 +193,7 @@ st.markdown(
         flex: 0 0 auto;
         place-items: center;
         border-radius: 8px;
-        background: color-mix(in srgb, var(--accent) 12%, white);
+        background: color-mix(in srgb, var(--accent) 22%, #1c2541);
         color: var(--accent);
         font-size: 0.95rem;
         font-weight: bold;
@@ -203,7 +201,7 @@ st.markdown(
       .metric-value {
         overflow: hidden;
         margin-top: 0.35rem;
-        color: #0f1e2f !important;
+        color: #ffffff !important;
         font-size: clamp(1.15rem, 1.45vw, 1.55rem) !important;
         font-weight: 800 !important;
         letter-spacing: -0.035em;
@@ -212,7 +210,7 @@ st.markdown(
       }
       .metric-hint {
         margin-top: 0.35rem;
-        color: #64748b !important;
+        color: var(--text-secondary) !important;
         font-size: 0.72rem !important;
         font-weight: 500;
       }
@@ -220,26 +218,26 @@ st.markdown(
       /* Contenedores con Borde */
       [data-testid="stVerticalBlockBorderWrapper"] {
         overflow: hidden;
-        border: 1px solid #e2e8f0 !important;
+        border: 1px solid var(--border-color) !important;
         border-radius: 14px !important;
-        background: #ffffff !important;
-        box-shadow: 0 4px 14px rgba(15, 30, 47, 0.04) !important;
-        padding: 0.6rem 0.8rem !important;
+        background: var(--bg-card) !important;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25) !important;
+        padding: 0.7rem 0.9rem !important;
       }
 
-      /* Puente Tributario (Tarjeta Azul Oscura Ejecutiva) */
+      /* Puente Tributario */
       .tax-bridge {
         position: relative;
         min-height: 480px;
         overflow: hidden;
         padding: 1.4rem 1.5rem;
-        border: 1px solid #1e3a5f;
+        border: 1px solid var(--border-color);
         border-radius: 14px;
-        background: linear-gradient(145deg, #0b2239 0%, #0f2d4e 100%);
+        background: linear-gradient(145deg, #0f172a 0%, #131c35 100%);
         color: #ffffff !important;
-        box-shadow: 0 6px 20px rgba(11, 34, 57, 0.15);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
       }
-      .tax-bridge .section-label { color: #60a5fa !important; }
+      .tax-bridge .section-label { color: #38bdf8 !important; }
       .tax-bridge .section-title { color: #ffffff !important; font-size: 1.5rem !important; }
       .tax-icon {
         position: absolute;
@@ -249,10 +247,11 @@ st.markdown(
         width: 38px;
         height: 38px;
         place-items: center;
-        border: 1.5px solid rgba(255, 255, 255, 0.2);
+        border: 1.5px solid rgba(255, 255, 255, 0.15);
         border-radius: 10px;
         color: #93c5fd;
         font-size: 1.1rem;
+        background: rgba(255, 255, 255, 0.05);
       }
       .tax-list { margin: 1.35rem 0 0; }
       .tax-row {
@@ -261,7 +260,7 @@ st.markdown(
         align-items: center;
         gap: 1rem;
         padding: 0.85rem 0;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.09);
       }
       .tax-row span {
         max-width: 58%;
@@ -282,78 +281,85 @@ st.markdown(
         padding-top: 1.1rem;
       }
       .tax-total span { color: #ffffff !important; font-weight: 800 !important; font-size: 0.88rem !important; }
-      .tax-total strong { color: #fbbf24 !important; font-size: 1.2rem !important; font-weight: 800 !important; }
+      .tax-total strong { color: #fbbf24 !important; font-size: 1.25rem !important; font-weight: 800 !important; }
       .tax-note {
         position: relative;
         z-index: 1;
         margin: 1rem 0 0;
         padding-top: 0.9rem;
-        border-top: 1px solid rgba(255, 255, 255, 0.12);
+        border-top: 1px solid rgba(255, 255, 255, 0.09);
         color: #94a3b8 !important;
         font-size: 0.68rem !important;
         line-height: 1.5;
       }
 
-      /* BOTONES CORREGIDOS CON ALTO CONTRASTE */
+      /* BOTONES EN MODO OSCURO */
       .stButton > button {
-        background-color: #ffffff !important;
-        color: #0f2942 !important;
-        border: 1.5px solid #cbd5e1 !important;
+        background-color: #24304f !important;
+        color: #f8fafc !important;
+        border: 1.5px solid #3b4d79 !important;
         border-radius: 8px !important;
         font-weight: 700 !important;
         font-size: 0.82rem !important;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.04) !important;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2) !important;
         transition: all 0.2s ease !important;
       }
       .stButton > button:hover {
-        background-color: #f1f5f9 !important;
-        border-color: #2563eb !important;
-        color: #1d4ed8 !important;
+        background-color: #33436b !important;
+        border-color: #38bdf8 !important;
+        color: #38bdf8 !important;
       }
       
       /* Botón Primario Guardar */
       .stButton > button[kind="primary"], .stButton > button[data-testid="baseButton-primary"] {
-        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+        background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%) !important;
         color: #ffffff !important;
-        border: 1px solid #b91c1c !important;
+        border: 1px solid #be123c !important;
         font-weight: 700 !important;
-        box-shadow: 0 2px 6px rgba(220, 38, 38, 0.25) !important;
+        box-shadow: 0 4px 12px rgba(225, 29, 72, 0.35) !important;
       }
       .stButton > button[kind="primary"]:hover {
-        background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%) !important;
-        box-shadow: 0 4px 12px rgba(220, 38, 38, 0.35) !important;
+        background: linear-gradient(135deg, #e11d48 0%, #be123c 100%) !important;
+        box-shadow: 0 6px 16px rgba(225, 29, 72, 0.45) !important;
       }
 
       /* Botón de Descarga */
       .stDownloadButton > button {
-        background-color: #0b2848 !important;
+        background-color: #1e3a8a !important;
         color: #ffffff !important;
-        border: 1px solid #081d34 !important;
+        border: 1.5px solid #3b82f6 !important;
         border-radius: 8px !important;
         font-weight: 700 !important;
         font-size: 0.82rem !important;
-        box-shadow: 0 2px 6px rgba(11, 40, 72, 0.2) !important;
+        box-shadow: 0 4px 10px rgba(30, 58, 138, 0.3) !important;
       }
       .stDownloadButton > button:hover {
-        background-color: #1e40af !important;
+        background-color: #2563eb !important;
         color: #ffffff !important;
       }
 
       /* Control Segmentado (Todas / Ingresos / Gastos) */
       [data-testid="stSegmentedControl"] {
-        background-color: #e2e8f0 !important;
+        background-color: #131c35 !important;
         padding: 3px !important;
         border-radius: 8px !important;
+        border: 1px solid var(--border-color) !important;
       }
       [data-testid="stSegmentedControl"] button {
         font-weight: 700 !important;
-        color: #475569 !important;
+        color: #94a3b8 !important;
         border-radius: 6px !important;
       }
       [data-testid="stSegmentedControl"] button[aria-checked="true"] {
-        background-color: #ffffff !important;
-        color: #0b2848 !important;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.08) !important;
+        background-color: #24304f !important;
+        color: #38bdf8 !important;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.2) !important;
+      }
+
+      /* Barra Lateral */
+      [data-testid="stSidebar"] {
+        background-color: #0d162e !important;
+        border-right: 1px solid var(--border-color) !important;
       }
 
       @media(max-width: 1220px){ .metric-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
@@ -482,10 +488,10 @@ def estado_forecast(row: pd.Series) -> str:
 def color_estado(valor: object) -> str:
     texto = str(valor)
     if "Ahorro" in texto or texto.startswith("▲ Ingreso"):
-        return "color:#065f46;background-color:#d1fae5;font-weight:700;border-radius:4px"
+        return "color:#34d399;background-color:#064e3b;font-weight:700;border-radius:4px"
     if "Mayor gasto" in texto or texto.startswith("▼ Ingreso"):
-        return "color:#991b1b;background-color:#fee2e2;font-weight:700;border-radius:4px"
-    return "color:#475569;font-weight:500"
+        return "color:#f87171;background-color:#7f1d1d;font-weight:700;border-radius:4px"
+    return "color:#94a3b8;font-weight:500"
 
 
 # =============================================================================
@@ -596,19 +602,19 @@ st.markdown(
 
 st.markdown(
     '<section class="metric-grid">'
-    + tarjeta("Ingresos Proyectados", moneda(total_ingresos), "Acumulado anual proyectado", "#2563eb", "↗")
-    + tarjeta("Gastos Proyectados", moneda(total_gastos), porcentaje(ratio_gastos) + " de los ingresos", "#dc2626", "▣")
-    + tarjeta("Resultado Antes Impuesto", moneda(resultado_antes_impuestos), "Resultado operacional bruto", "#7c3aed", "◉")
-    + tarjeta("Margen Operacional", porcentaje(margen), "Utilidad / Ingresos", "#059669", "↗")
-    + tarjeta("Impuesto Estimado", moneda(impuesto), porcentaje(tasa_efectiva) + " tasa efectiva IDPC", "#d97706", "♜")
-    + tarjeta("Resultado Líquido Final", moneda(resultado_liquido), "Utilidad disponible final", "#0b2848", "✣")
+    + tarjeta("Ingresos Proyectados", moneda(total_ingresos), "Acumulado anual proyectado", "#38bdf8", "↗")
+    + tarjeta("Gastos Proyectados", moneda(total_gastos), porcentaje(ratio_gastos) + " de los ingresos", "#f43f5e", "▣")
+    + tarjeta("Resultado Antes Impuesto", moneda(resultado_antes_impuestos), "Resultado operacional bruto", "#a855f7", "◉")
+    + tarjeta("Margen Operacional", porcentaje(margen), "Utilidad / Ingresos", "#10b981", "↗")
+    + tarjeta("Impuesto Estimado", moneda(impuesto), porcentaje(tasa_efectiva) + " tasa efectiva IDPC", "#fbbf24", "♜")
+    + tarjeta("Resultado Líquido Final", moneda(resultado_liquido), "Utilidad disponible final", "#38bdf8", "✣")
     + "</section>",
     unsafe_allow_html=True,
 )
 
 
 # =============================================================================
-# EVOLUCIÓN MENSUAL Y PUENTE TRIBUTARIO
+# EVOLUCIÓN MENSUAL Y PUENTE TRIBUTARIO (GRÁFICO EN FONDO DARK SLATE)
 # =============================================================================
 grafico_col, impuesto_col = st.columns([3.4, 1.1], gap="medium")
 
@@ -624,74 +630,74 @@ with grafico_col:
 
         figura = go.Figure()
         
-        # 1. Ingresos: Azul vibrante para histórico, Azul suave para forecast
+        # 1. Ingresos: Azul cian vibrante para histórico, Celeste suave para forecast
         figura.add_trace(
             go.Bar(
                 x=MESES,
                 y=ingresos_mes,
                 name="Ingresos",
-                marker_color=["#2563eb" if etapa == "Histórico" else "#93c5fd" for etapa in fase],
-                marker_line=dict(color="#1d4ed8", width=1),
+                marker_color=["#38bdf8" if etapa == "Histórico" else "#7dd3fc" for etapa in fase],
+                marker_line=dict(color="#0284c7", width=1),
                 hovertemplate="<b>%{x}</b><br>Ingresos: $%{y:,.0f}<extra></extra>",
             )
         )
-        # 2. Gastos: Rojo vibrante para histórico, Rosa suave para forecast
+        # 2. Gastos: Rojo coral para histórico, Rosa suave para forecast
         figura.add_trace(
             go.Bar(
                 x=MESES,
                 y=gastos_mes,
                 name="Gastos (Abs)",
-                marker_color=["#ef4444" if etapa == "Histórico" else "#fca5a5" for etapa in fase],
-                marker_line=dict(color="#dc2626", width=1),
+                marker_color=["#f43f5e" if etapa == "Histórico" else "#fda4af" for etapa in fase],
+                marker_line=dict(color="#e11d48", width=1),
                 hovertemplate="<b>%{x}</b><br>Gastos: $%{y:,.0f}<extra></extra>",
             )
         )
-        # 3. Línea de Resultado Acumulado (Verde Esmeralda Corporativo)
+        # 3. Línea de Resultado Acumulado (Verde Esmeralda Brillante)
         figura.add_trace(
             go.Scatter(
                 x=MESES,
                 y=acumulado,
                 name="Resultado Acumulado",
                 mode="lines+markers",
-                line=dict(color="#059669", width=3.5, shape="spline"),
-                marker=dict(size=8, color="#047857", symbol="circle"),
+                line=dict(color="#10b981", width=3.5, shape="spline"),
+                marker=dict(size=8, color="#34d399", symbol="circle"),
                 hovertemplate="<b>%{x}</b><br>Resultado Acumulado: $%{y:,.0f}<extra></extra>",
             )
         )
         # Sombra de fondo para el Forecast (Ago - Dic)
         figura.add_vrect(
-            x0=6.5, x1=11.5, fillcolor="#eff6ff", opacity=0.8,
+            x0=6.5, x1=11.5, fillcolor="rgba(56, 189, 248, 0.08)",
             layer="below", line_width=0,
         )
         figura.add_vline(
-            x=6.5, line_color="#3b82f6", line_dash="dash", line_width=1.5,
+            x=6.5, line_color="#38bdf8", line_dash="dash", line_width=1.5,
             annotation_text="<b>Inicio Forecast</b>", annotation_position="top left",
-            annotation_font=dict(size=11, color="#1e40af")
+            annotation_font=dict(size=11, color="#7dd3fc")
         )
         figura.update_layout(
             barmode="group",
             hovermode="x unified",
             height=395,
             margin=dict(l=12, r=12, t=32, b=8),
-            paper_bgcolor="#ffffff",
-            plot_bgcolor="#ffffff",
-            font=dict(color="#334155", size=11, family="Plus Jakarta Sans"),
+            paper_bgcolor="#1c2541",
+            plot_bgcolor="#1c2541",
+            font=dict(color="#cbd5e1", size=11, family="Plus Jakarta Sans"),
             legend=dict(
                 orientation="h", yanchor="bottom", y=1.04,
-                xanchor="right", x=1, font=dict(size=11, weight="bold"),
+                xanchor="right", x=1, font=dict(size=11, weight="bold", color="#ffffff"),
             ),
             xaxis=dict(
                 showgrid=False, zeroline=False,
-                tickfont=dict(size=11, weight="bold", color="#1e293b")
+                tickfont=dict(size=11, weight="bold", color="#f8fafc")
             ),
             yaxis=dict(
-                showgrid=True, gridcolor="#f1f5f9", zeroline=False,
+                showgrid=True, gridcolor="#2d3e66", zeroline=False,
                 tickprefix="$", tickformat="~s",
-                tickfont=dict(size=10, color="#64748b"),
+                tickfont=dict(size=10, color="#94a3b8"),
             ),
         )
         st.plotly_chart(figura, use_container_width=True, config={"displayModeBar": False})
-        st.caption("💡 *El área sombreada en azul claro delimita la proyección editable (Agosto a Diciembre).*")
+        st.caption("💡 *El área delimitada en azul traslúcido corresponde a la proyección editable (Agosto a Diciembre).*")
 
 with impuesto_col:
     st.markdown(
