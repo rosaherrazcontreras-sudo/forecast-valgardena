@@ -2,11 +2,16 @@
 ===================================================================================
 FORECAST FINANCIERO Y PROYECCIÓN TRIBUTARIA - VALGARDENA / SCT SOLUCIONES
 Arquitectura: Streamlit + Google Sheets Connection + Plotly + Data Editor
-Versión: 5.0 (Dark Executive Theme - Fondo Elegante Slate & Alto Contraste)
+Seguridad: Portal de Autenticación Criptográfico (Timing-Safe & Anti-Inyección)
+Versión: 6.0 (Dark Executive Theme + Módulo de Seguridad & Control de Acceso)
 ===================================================================================
 """
 
 import os
+import re
+import hashlib
+import hmac
+import time
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
@@ -20,13 +25,11 @@ except ImportError:
     GSHEETS_AVAILABLE = False
 
 # =============================================================================
-# CONFIGURACIÓN DE NUBE (GOOGLE SHEETS & RESPALDO LOCAL)
+# 0. CONFIGURACIÓN DE PÁGINA Y ESTILOS GLOBALES
 # =============================================================================
-URL_GOOGLE_SHEET = "https://docs.google.com/spreadsheets/d/1_D8MgvLX8-KdaAdH35GhcIlNQPWzBwk8-8fgWSVnhxg/edit?gid=0#gid=0"
-
 st.set_page_config(
     page_title="Forecast Financiero | Valgardena",
-    page_icon="📊",
+    page_icon="🔒",
     layout="wide",
     initial_sidebar_state="collapsed",
 )
@@ -39,8 +42,80 @@ TASA_IDPC = 0.27
 PORCENTAJE_REBAJA_14E = 0.50
 GASTOS_RECHAZADOS = 7_595_894
 
+URL_GOOGLE_SHEET = "https://docs.google.com/spreadsheets/d/1_D8MgvLX8-KdaAdH35GhcIlNQPWzBwk8-8fgWSVnhxg/edit?gid=0#gid=0"
+
 # =============================================================================
-# ESTILOS CSS DARK EXECUTIVE CORPORATIVO (FONDO OSCURO MODERNO Y ELEGANTE)
+# 1. MÓDULO DE SEGURIDAD & CONTROL DE ACCESO (ANTI-INYECCIÓN & HASHING CRIPTOGRÁFICO)
+# =============================================================================
+SALT = "SCT_VALGARDENA_SECURE_SALT_2026"
+
+def hash_password(password: str) -> str:
+    """Genera hash SHA-256 seguro con sal criptográfica."""
+    salted = f"{SALT}:{password}"
+    return hashlib.sha256(salted.encode("utf-8")).hexdigest()
+
+# Credenciales autorizadas por defecto (hashes protegidos)
+DEFAULT_USERS = {
+    "gerencia": {
+        "hash": hash_password("Valgardena2026!"),
+        "nombre": "Gerencia General",
+        "rol": "Director"
+    },
+    "admin": {
+        "hash": hash_password("SctAdmin2026*"),
+        "nombre": "Administrador SCT",
+        "rol": "Admin"
+    },
+    "socio": {
+        "hash": hash_password("Socio2026"),
+        "nombre": "Socio Principal",
+        "rol": "Socio"
+    }
+}
+
+def get_authorized_users() -> dict:
+    """Obtiene usuarios desde Streamlit Secrets o el diccionario seguro por defecto."""
+    if "credentials" in st.secrets and "users" in st.secrets["credentials"]:
+        users = {}
+        for u in st.secrets["credentials"]["users"]:
+            username = u.get("username", "").strip().lower()
+            users[username] = {
+                "hash": u.get("password_hash", hash_password(u.get("password", ""))),
+                "nombre": u.get("name", username.capitalize()),
+                "rol": u.get("role", "Usuario")
+            }
+        return users
+    return DEFAULT_USERS
+
+def sanitize_input(text: str) -> str:
+    """
+    SANITIZACIÓN ESTRICTA ANTI-INYECCIÓN:
+    Filtra caracteres maliciosos (SQLi, XSS, scripts) permitiendo solo alfanuméricos seguros.
+    """
+    if not isinstance(text, str):
+        return ""
+    cleaned = re.sub(r"[^a-zA-Z0-9_\-\.@]", "", text.strip())
+    return cleaned[:60]
+
+def verify_credentials(username_input: str, password_input: str) -> tuple[bool, dict | None]:
+    """Verificación de credenciales con tiempo constante (hmac.compare_digest)."""
+    clean_user = sanitize_input(username_input).lower()
+    users = get_authorized_users()
+    
+    if not clean_user or clean_user not in users:
+        hash_password("dummy_password_timing_defense")  # Mitiga análisis de tiempo
+        return False, None
+    
+    user_info = users[clean_user]
+    input_hash = hash_password(password_input)
+    
+    if hmac.compare_digest(input_hash, user_info["hash"]):
+        return True, user_info
+    return False, None
+
+
+# =============================================================================
+# 2. ESTILOS CSS CORPORATIVOS (DARK EXECUTIVE THEME)
 # =============================================================================
 st.markdown(
     """
@@ -48,19 +123,18 @@ st.markdown(
       @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Lora:ital,wght@0,500;0,600;1,400&display=swap');
       
       :root {
-        --bg-main: #0b132b;          /* Fondo principal azul noche oscuro */
-        --bg-card: #1c2541;          /* Fondo de tarjetas slate oscuro */
-        --bg-card-alt: #131c35;      /* Fondo secundario */
-        --border-color: #2d3e66;     /* Borde sutil de alto contraste */
-        --text-primary: #f8fafc;     /* Texto blanco brillante */
-        --text-secondary: #94a3b8;   /* Texto gris slate claro */
-        --accent-blue: #38bdf8;      /* Azul cian brillante */
-        --accent-green: #10b981;     /* Verde esmeralda */
-        --accent-red: #f43f5e;       /* Rojo coral */
-        --accent-gold: #fbbf24;      /* Dorado */
+        --bg-main: #0b132b;
+        --bg-card: #1c2541;
+        --bg-card-alt: #131c35;
+        --border-color: #2d3e66;
+        --text-primary: #f8fafc;
+        --text-secondary: #94a3b8;
+        --accent-blue: #38bdf8;
+        --accent-green: #10b981;
+        --accent-red: #f43f5e;
+        --accent-gold: #fbbf24;
       }
       
-      /* Aplicación general */
       html, body, [class*="css"], .stApp {
         font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
         background-color: var(--bg-main) !important;
@@ -75,7 +149,6 @@ st.markdown(
         padding: 1.5rem 2.5rem 3.5rem !important;
       }
       
-      /* Franja superior */
       .top-strip {
         position: fixed;
         z-index: 999;
@@ -130,6 +203,42 @@ st.markdown(
         color: var(--text-secondary) !important;
         font-size: 0.85rem !important;
         line-height: 1.4;
+      }
+
+      /* Tarjeta de Login */
+      .login-container {
+        max-width: 460px;
+        margin: 4.5rem auto 2rem;
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 2.5rem 2.2rem;
+        box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45);
+        text-align: center;
+      }
+      .login-badge {
+        display: inline-block;
+        padding: 5px 14px;
+        background: rgba(56, 189, 248, 0.12);
+        color: var(--accent-blue);
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        margin-bottom: 1rem;
+      }
+      .login-title {
+        color: #ffffff;
+        font-family: 'Lora', Georgia, serif;
+        font-size: 1.8rem;
+        font-weight: 600;
+        margin-bottom: 0.4rem;
+      }
+      .login-desc {
+        color: var(--text-secondary);
+        font-size: 0.85rem;
+        margin-bottom: 1.8rem;
       }
 
       /* Track de Fases */
@@ -293,7 +402,7 @@ st.markdown(
         line-height: 1.5;
       }
 
-      /* BOTONES EN MODO OSCURO */
+      /* Botones Generales */
       .stButton > button {
         background-color: #24304f !important;
         color: #f8fafc !important;
@@ -310,17 +419,17 @@ st.markdown(
         color: #38bdf8 !important;
       }
       
-      /* Botón Primario Guardar */
+      /* Botón Primario */
       .stButton > button[kind="primary"], .stButton > button[data-testid="baseButton-primary"] {
-        background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%) !important;
+        background: linear-gradient(135deg, #38bdf8 0%, #2563eb 100%) !important;
         color: #ffffff !important;
-        border: 1px solid #be123c !important;
+        border: 1px solid #1d4ed8 !important;
         font-weight: 700 !important;
-        box-shadow: 0 4px 12px rgba(225, 29, 72, 0.35) !important;
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35) !important;
       }
       .stButton > button[kind="primary"]:hover {
-        background: linear-gradient(135deg, #e11d48 0%, #be123c 100%) !important;
-        box-shadow: 0 6px 16px rgba(225, 29, 72, 0.45) !important;
+        background: linear-gradient(135deg, #60a5fa 0%, #1d4ed8 100%) !important;
+        box-shadow: 0 6px 16px rgba(37, 99, 235, 0.45) !important;
       }
 
       /* Botón de Descarga */
@@ -331,14 +440,13 @@ st.markdown(
         border-radius: 8px !important;
         font-weight: 700 !important;
         font-size: 0.82rem !important;
-        box-shadow: 0 4px 10px rgba(30, 58, 138, 0.3) !important;
       }
       .stDownloadButton > button:hover {
         background-color: #2563eb !important;
         color: #ffffff !important;
       }
 
-      /* Control Segmentado (Todas / Ingresos / Gastos) */
+      /* Control Segmentado */
       [data-testid="stSegmentedControl"] {
         background-color: #131c35 !important;
         padding: 3px !important;
@@ -353,7 +461,6 @@ st.markdown(
       [data-testid="stSegmentedControl"] button[aria-checked="true"] {
         background-color: #24304f !important;
         color: #38bdf8 !important;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.2) !important;
       }
 
       /* Barra Lateral */
@@ -362,13 +469,20 @@ st.markdown(
         border-right: 1px solid var(--border-color) !important;
       }
 
-      @media(max-width: 1220px){ .metric-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-      @media(max-width: 760px){ 
-        .block-container { padding: 1.25rem 1rem 3rem !important; }
-        .hero { align-items: flex-start; flex-direction: column; }
-        .phase-track { width: 100%; }
-        .metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      /* Barra de Usuario Autenticado */
+      .user-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 1rem;
+        background: #131c35;
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        margin-bottom: 1.2rem;
+        font-size: 0.82rem;
       }
+      .user-info-text { color: #cbd5e1; }
+      .user-info-text strong { color: var(--accent-blue); }
     </style>
     <div class="top-strip"></div>
     """,
@@ -377,10 +491,105 @@ st.markdown(
 
 
 # =============================================================================
-# FUNCIONES DE CARGA Y TRANSFORMACIÓN DE DATOS (CON FALLBACK RESILIENTE)
+# 3. GESTIÓN DE SESIÓN & PANTALLA DE LOGIN
+# =============================================================================
+if "authenticated" not in st.session_state:
+    st.session_state["authenticated"] = False
+if "user_data" not in st.session_state:
+    st.session_state["user_data"] = {}
+if "login_attempts" not in st.session_state:
+    st.session_state["login_attempts"] = 0
+if "lockout_time" not in st.session_state:
+    st.session_state["lockout_time"] = 0
+
+# COMPROBACIÓN DE ACCESO
+if not st.session_state["authenticated"]:
+    # Verificación de bloqueo por fuerza bruta
+    current_time = time.time()
+    if current_time < st.session_state["lockout_time"]:
+        remaining = int(st.session_state["lockout_time"] - current_time)
+        st.error(f"🔒 Acceso bloqueado por seguridad. Reintenta en **{remaining} segundos**.")
+        st.stop()
+
+    # Formulario de Ingreso Seguro
+    st.markdown("""
+    <div class="login-container">
+        <span class="login-badge">🛡️ Portal Financiero Seguro</span>
+        <h2 class="login-title">Valgardena · SCT</h2>
+        <p class="login-desc">Ingresa tus credenciales autorizadas para consultar el Forecast Financiero y Proyección Tributaria.</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    col_l1, col_l2, col_l3 = st.columns([1, 1.2, 1])
+    with col_l2:
+        with st.form("login_form", clear_on_submit=False):
+            usuario_ingresado = st.text_input(
+                "👤 Usuario o Correo",
+                placeholder="Ej: gerencia",
+                help="Usuario autorizado"
+            )
+            clave_ingresada = st.text_input(
+                "🔑 Contraseña",
+                type="password",
+                placeholder="••••••••••••",
+                help="Contraseña confidencial"
+            )
+            submit_btn = st.form_submit_button("Ingresar al Sistema", type="primary", use_container_width=True)
+
+        if submit_btn:
+            if not usuario_ingresado or not clave_ingresada:
+                st.warning("⚠️ Por favor completa ambos campos para continuar.")
+            else:
+                is_valid, user_data = verify_credentials(usuario_ingresado, clave_ingresada)
+                if is_valid:
+                    st.session_state["authenticated"] = True
+                    st.session_state["user_data"] = user_data
+                    st.session_state["login_attempts"] = 0
+                    st.toast(f"¡Bienvenido, {user_data['nombre']}!", icon="👋")
+                    st.rerun()
+                else:
+                    st.session_state["login_attempts"] += 1
+                    attempts_left = max(0, 5 - st.session_state["login_attempts"])
+                    
+                    if st.session_state["login_attempts"] >= 5:
+                        st.session_state["lockout_time"] = time.time() + 60
+                        st.error("🚫 Has superado el límite de intentos. Bloqueado por 60 segundos.")
+                        st.rerun()
+                    else:
+                        st.error(f"❌ Credenciales incorrectas. Te quedan {attempts_left} intentos antes del bloqueo.")
+        
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.caption("🔒 *Conexión segura Timing-Safe con sanitización estricta anti-inyección.*")
+    
+    st.stop()
+
+
+# =============================================================================
+# 4. APLICACIÓN PRINCIPAL (USUARIO AUTENTICADO)
+# =============================================================================
+user_info = st.session_state.get("user_data", {})
+user_nombre = user_info.get("nombre", "Usuario Autorizado")
+user_rol = user_info.get("rol", "Socio")
+
+col_u1, col_u2 = st.columns([3.5, 0.9])
+with col_u1:
+    st.markdown(f"""
+    <div class="user-bar">
+        <span class="user-info-text">👤 Sesión Activa: <strong>{user_nombre}</strong> ({user_rol}) &nbsp;|&nbsp; 🟢 Conexión Segura Criptográfica</span>
+    </div>
+    """, unsafe_allow_html=True)
+with col_u2:
+    if st.button("🚪 Cerrar Sesión", use_container_width=True):
+        st.session_state["authenticated"] = False
+        st.session_state["user_data"] = {}
+        st.session_state.pop("forecast_data", None)
+        st.rerun()
+
+
+# =============================================================================
+# 5. CARGA Y TRANSFORMACIÓN DE DATOS (CON FALLBACK RESILIENTE)
 # =============================================================================
 def generate_mock_backup() -> pd.DataFrame:
-    """Genera datos de respaldo si no hay conexión a Google Sheets ni archivo local."""
     rows = [
         {
             'Categoría': '1. INGRESOS OPERACIONALES', 'Área': 'SANTIAGO', 'Grupo': 'SERVICIOS CONTABLES',
@@ -427,10 +636,8 @@ def generate_mock_backup() -> pd.DataFrame:
     ]
     return pd.DataFrame(rows)
 
-
 @st.cache_data(ttl=60)
 def cargar_datos() -> pd.DataFrame:
-    """Carga desde Google Sheets; si falla, lee Dashboard.xlsx local o genera mock."""
     if GSHEETS_AVAILABLE:
         try:
             conn = st.connection("gsheets", type=GSheetsConnection)
@@ -450,20 +657,16 @@ def cargar_datos() -> pd.DataFrame:
 
     return generate_mock_backup()
 
-
 def es_ingreso(categoria: object) -> bool:
     texto = str(categoria).upper()
     return any(palabra in texto for palabra in ("INGRESO", "VENTA", "GANANCIA"))
-
 
 def moneda(valor: float) -> str:
     signo = "−" if valor < 0 else ""
     return f"{signo}${abs(valor):,.0f}".replace(",", ".")
 
-
 def porcentaje(valor: float) -> str:
     return f"{valor:.1f}%".replace(".", ",")
-
 
 def tarjeta(etiqueta: str, valor: str, ayuda: str, color: str, icono: str) -> str:
     return (
@@ -475,7 +678,6 @@ def tarjeta(etiqueta: str, valor: str, ayuda: str, color: str, icono: str) -> st
         '</article>'
     )
 
-
 def estado_forecast(row: pd.Series) -> str:
     variacion = float(row["Variación firmada"])
     if abs(variacion) < 0.5:
@@ -483,7 +685,6 @@ def estado_forecast(row: pd.Series) -> str:
     if es_ingreso(row["Categoría"]):
         return f"▲ Ingreso {moneda(abs(variacion))}" if variacion > 0 else f"▼ Ingreso {moneda(abs(variacion))}"
     return f"▼ Mayor gasto {moneda(abs(variacion))}" if variacion < 0 else f"▲ Ahorro {moneda(abs(variacion))}"
-
 
 def color_estado(valor: object) -> str:
     texto = str(valor)
@@ -495,14 +696,13 @@ def color_estado(valor: object) -> str:
 
 
 # =============================================================================
-# PREPARACIÓN Y VALIDACIÓN DE LA BASE DE DATOS
+# 6. PREPARACIÓN Y FILTROS LATERALES
 # =============================================================================
 df_base = cargar_datos()
 if df_base is None:
     st.error("No se pudo cargar la base de datos.")
     st.stop()
 
-# Limpieza y filtrado
 df_base.columns = [str(c).strip() for c in df_base.columns]
 if "Categoría" in df_base.columns:
     df_base = df_base[~df_base["Categoría"].astype(str).str.upper().str.contains("RESULTADO DEL EJERCICIO", na=False)].copy()
@@ -528,10 +728,6 @@ if "editor_version" not in st.session_state:
 
 df_global = st.session_state.forecast_data.copy()
 
-
-# =============================================================================
-# FILTROS LATERALES EN CASCADA
-# =============================================================================
 with st.sidebar:
     st.markdown("## 🏢 **Valgardena**")
     st.caption("Panel de Control & Filtros Financieros")
@@ -556,7 +752,7 @@ with st.sidebar:
 
 
 # =============================================================================
-# MOTOR FINANCIERO Y TRIBUTARIO
+# 7. MOTOR FINANCIERO Y TRIBUTARIO
 # =============================================================================
 mascara_ingresos = df_filtrado["Categoría"].map(es_ingreso)
 ingresos_mes = [float(df_filtrado.loc[mascara_ingresos, mes].sum()) for mes in MESES]
@@ -584,7 +780,7 @@ tasa_efectiva = (impuesto / resultado_antes_impuestos * 100) if resultado_antes_
 
 
 # =============================================================================
-# CABECERA Y TARJETAS EJECUTIVAS
+# 8. CABECERA Y TARJETAS EJECUTIVAS
 # =============================================================================
 st.markdown(
     """
@@ -614,7 +810,7 @@ st.markdown(
 
 
 # =============================================================================
-# EVOLUCIÓN MENSUAL Y PUENTE TRIBUTARIO (GRÁFICO EN FONDO DARK SLATE)
+# 9. EVOLUCIÓN MENSUAL Y PUENTE TRIBUTARIO
 # =============================================================================
 grafico_col, impuesto_col = st.columns([3.4, 1.1], gap="medium")
 
@@ -630,7 +826,7 @@ with grafico_col:
 
         figura = go.Figure()
         
-        # 1. Ingresos: Azul cian vibrante para histórico, Celeste suave para forecast
+        # 1. Ingresos
         figura.add_trace(
             go.Bar(
                 x=MESES,
@@ -641,7 +837,7 @@ with grafico_col:
                 hovertemplate="<b>%{x}</b><br>Ingresos: $%{y:,.0f}<extra></extra>",
             )
         )
-        # 2. Gastos: Rojo coral para histórico, Rosa suave para forecast
+        # 2. Gastos
         figura.add_trace(
             go.Bar(
                 x=MESES,
@@ -652,7 +848,7 @@ with grafico_col:
                 hovertemplate="<b>%{x}</b><br>Gastos: $%{y:,.0f}<extra></extra>",
             )
         )
-        # 3. Línea de Resultado Acumulado (Verde Esmeralda Brillante)
+        # 3. Línea de Resultado Acumulado
         figura.add_trace(
             go.Scatter(
                 x=MESES,
@@ -664,7 +860,7 @@ with grafico_col:
                 hovertemplate="<b>%{x}</b><br>Resultado Acumulado: $%{y:,.0f}<extra></extra>",
             )
         )
-        # Sombra de fondo para el Forecast (Ago - Dic)
+        # Sombra de fondo para el Forecast
         figura.add_vrect(
             x0=6.5, x1=11.5, fillcolor="rgba(56, 189, 248, 0.08)",
             layer="below", line_width=0,
@@ -721,7 +917,7 @@ with impuesto_col:
 
 
 # =============================================================================
-# EDITOR DE PROYECCIONES INTERACTIVO
+# 10. EDITOR DE PROYECCIONES INTERACTIVO
 # =============================================================================
 st.write("")
 with st.container(border=True):
