@@ -4,7 +4,7 @@ import plotly.graph_objects as go
 import streamlit as st
 from streamlit_gsheets import GSheetsConnection
 
-URL_GOOGLE_SHEET = "https://docs.google.com/spreadsheets/d/1_D8MgvLX8-KdaAdH35GhcI1NQPwzBwk8-8fgWSVnhxg/edit?gid=0#gid=0"
+URL_GOOGLE_SHEET = "https://docs.google.com/spreadsheets/d/1_D8MgvLX8-KdaAdH35GhcI1NQPwzBwk8-8fgWSVnhxg"
 
 st.set_page_config(
     page_title="Forecast financiero | Valgardena",
