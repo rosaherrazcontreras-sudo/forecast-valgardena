@@ -1,9 +1,13 @@
 import os
-
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 from streamlit_gsheets import GSheetsConnection
+
+# =============================================================================
+# ⚠️ CONFIGURACIÓN DE NUBE: PEGA EL LINK DE TU GOOGLE SHEET AQUÍ ⚠️
+# =============================================================================
+URL_GOOGLE_SHEET = "https://docs.google.com/spreadsheets/d/1_D8MgvLX8-KdaAdH35GhcIlNQPWzBwk8-8fgWSVnhxg/edit?gid=0#gid=0"
 
 st.set_page_config(
     page_title="Forecast financiero | Valgardena",
@@ -19,7 +23,6 @@ COLUMNAS_TEXTO = ["Categoría", "Área", "Grupo", "Cuenta / Ítem", "Detalle / T
 TASA_IDPC = 0.27
 PORCENTAJE_REBAJA_14E = 0.50
 GASTOS_RECHAZADOS = 7_595_894
-
 
 st.markdown(
     """
@@ -82,36 +85,28 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-
 @st.cache_data(ttl=60)
 def cargar_datos() -> pd.DataFrame | None:
     try:
         conn = st.connection("gsheets", type=GSheetsConnection)
-        # Reemplaza TU_LINK_AQUI con la URL de tu Google Sheet
-        df = conn.read(spreadsheet="TU_LINK_AQUI", worksheet="0")
+        df = conn.read(spreadsheet=URL_GOOGLE_SHEET)
         return df
     except Exception as e:
-        st.error(f"Falta configurar Google Sheets o el enlace es incorrecto: {e}")
+        st.error(f"Error conectando a Google Sheets: {e}")
         return None
-
 
 def es_ingreso(categoria: object) -> bool:
     texto = str(categoria).upper()
     return any(palabra in texto for palabra in ("INGRESO", "VENTA", "GANANCIA"))
 
-
 def moneda(valor: float) -> str:
     signo = "−" if valor < 0 else ""
     return f"{signo}${abs(valor):,.0f}".replace(",", ".")
 
-
 def porcentaje(valor: float) -> str:
     return f"{valor:.1f}%".replace(".", ",")
 
-
 def tarjeta(etiqueta: str, valor: str, ayuda: str, color: str, icono: str) -> str:
-    # Sin sangrías ni líneas vacías: evita que Markdown convierta el HTML
-    # concatenado en bloques de código a partir de la segunda tarjeta.
     return (
         f'<article class="metric-card" style="--accent:{color}">'
         f'<div class="metric-label"><span>{etiqueta}</span>'
@@ -121,7 +116,6 @@ def tarjeta(etiqueta: str, valor: str, ayuda: str, color: str, icono: str) -> st
         '</article>'
     )
 
-
 def estado_forecast(row: pd.Series) -> str:
     variacion = float(row["Variación firmada"])
     if abs(variacion) < 0.5:
@@ -129,7 +123,6 @@ def estado_forecast(row: pd.Series) -> str:
     if es_ingreso(row["Categoría"]):
         return f"▲ Ingreso {moneda(abs(variacion))}" if variacion > 0 else f"▼ Ingreso {moneda(abs(variacion))}"
     return f"▼ Mayor gasto {moneda(abs(variacion))}" if variacion < 0 else f"▲ Ahorro {moneda(abs(variacion))}"
-
 
 def color_estado(valor: object) -> str:
     texto = str(valor)
@@ -139,18 +132,17 @@ def color_estado(valor: object) -> str:
         return "color:#ad4540;background-color:#fff0ef;font-weight:700"
     return "color:#6b7c90"
 
-
 # -----------------------------------------------------------------------------
 # Base de datos de trabajo
 # -----------------------------------------------------------------------------
 df_base = cargar_datos()
 if df_base is None:
-    st.error("No encontré Dashboard_EERR_Mensual.csv ni Dashboard.xlsx en la carpeta de la aplicación.")
+    st.error("No encontré la base de datos en el enlace de Google Sheets proporcionado.")
     st.stop()
 
 faltantes = [columna for columna in COLUMNAS_TEXTO if columna not in df_base.columns]
 if faltantes:
-    st.error("Faltan columnas requeridas: " + ", ".join(faltantes))
+    st.error("Faltan columnas requeridas en el Sheet: " + ", ".join(faltantes))
     st.stop()
 
 df_base = df_base[df_base["Categoría"] != "RESULTADO DEL EJERCICIO"].copy()
@@ -167,7 +159,6 @@ if "forecast_data" not in st.session_state:
 if "editor_version" not in st.session_state:
     st.session_state.editor_version = 0
 df_global = st.session_state.forecast_data.copy()
-
 
 # -----------------------------------------------------------------------------
 # Filtros laterales en cascada
@@ -188,7 +179,6 @@ if st.sidebar.button("Restablecer filtros", use_container_width=True):
     for clave in ("f_categoria", "f_area", "f_grupo", "f_cuenta", "f_detalle"):
         st.session_state.pop(clave, None)
     st.rerun()
-
 
 # -----------------------------------------------------------------------------
 # Motor financiero y tributario
@@ -215,7 +205,6 @@ else:
     rebaja_14e = base_afecta = impuesto = 0.0
 resultado_liquido = resultado_antes_impuestos - impuesto
 tasa_efectiva = (impuesto / resultado_antes_impuestos * 100) if resultado_antes_impuestos > 0 else 0.0
-
 
 # -----------------------------------------------------------------------------
 # Cabecera y tarjetas ejecutivas
@@ -245,7 +234,6 @@ st.markdown(
     + "</section>",
     unsafe_allow_html=True,
 )
-
 
 # -----------------------------------------------------------------------------
 # Evolución mensual y puente tributario
@@ -338,7 +326,6 @@ with impuesto_col:
         unsafe_allow_html=True,
     )
 
-
 # -----------------------------------------------------------------------------
 # Editor de proyecciones
 # -----------------------------------------------------------------------------
@@ -374,7 +361,7 @@ with st.container(border=True):
         limpiar = boton_limpiar.button("Limpiar", use_container_width=True)
         restaurar = boton_restaurar.button("Restaurar", use_container_width=True)
 
-if actualizar:
+    if actualizar:
         cargar_datos.clear()
         st.session_state.pop("forecast_data", None)
         st.session_state.editor_version += 1
@@ -384,8 +371,7 @@ if actualizar:
         try:
             conn = st.connection("gsheets", type=GSheetsConnection)
             conn.update(
-                spreadsheet="TU_LINK_AQUI", 
-                worksheet="0", 
+                spreadsheet=URL_GOOGLE_SHEET,
                 data=st.session_state.forecast_data
             )
             st.toast("Forecast guardado en la nube exitosamente", icon="✅")
@@ -406,6 +392,7 @@ if actualizar:
         st.session_state.forecast_data = datos_restaurados
         st.session_state.editor_version += 1
         st.rerun()
+
     df_vista = df_filtrado.copy()
     if vista == "Ingresos":
         df_vista = df_vista[df_vista["Categoría"].map(es_ingreso)]
@@ -482,4 +469,3 @@ if actualizar:
         file_name="Forecast_Valgardena.csv",
         mime="text/csv",
     )
-
