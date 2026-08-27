@@ -4,7 +4,10 @@ import plotly.graph_objects as go
 import streamlit as st
 from streamlit_gsheets import GSheetsConnection
 
-URL_GOOGLE_SHEET = "https://docs.google.com/spreadsheets/d/1_D8MgvLX8-KdaAdH35GhcI1NQPwzBwk8-8fgWSVnhxg/edit?gid=0#gid=0"
+# =============================================================================
+# ⚠️ CONFIGURACIÓN DE NUBE: PEGA EL LINK DE TU GOOGLE SHEET AQUÍ ⚠️
+# =============================================================================
+URL_GOOGLE_SHEET = "PEGA_EL_LINK_AQUI"
 
 st.set_page_config(
     page_title="Forecast financiero | Valgardena",
@@ -29,10 +32,10 @@ st.markdown(
         --wash:#f1f4f7; --blue:#286bc5; --red:#d65b55; --green:#0d917b;
       }
       html, body, button, input, textarea, select { font-family:"Segoe UI",Arial,sans-serif; }
-      .stApp { background:var(--wash); color: #102944; }
+      .stApp { background:var(--wash); }
       [data-testid="stHeader"] { height:0; background:transparent; }
       #MainMenu, footer, [data-testid="stDeployButton"] { visibility:hidden; }
-      .block-container { max-width:1680px; padding:1.75rem 2.8rem 3.5rem; background: var(--wash); }
+      .block-container { max-width:1680px; padding:1.75rem 2.8rem 3.5rem; }
       .top-strip { position:fixed; z-index:999; inset:0 0 auto; height:10px; background:#0b2747; }
 
       .hero { display:flex; align-items:flex-end; justify-content:space-between; gap:2rem; margin:.55rem 0 1.15rem; }
@@ -71,8 +74,11 @@ st.markdown(
 
       .editor-copy { margin:.35rem 0 0; color:#718298; font-size:.75rem; }
       [data-testid="stDataEditor"] { overflow:hidden; border:1px solid #dce5ee; border-radius:11px; }
-      .stButton>button,.stDownloadButton>button { min-height:38px; border-color:#d1dce8; border-radius:9px; color:#17385d; font-size:.78rem; font-weight:650; background-color: white; }
+      .stButton>button,.stDownloadButton>button { min-height:38px; border-color:#d1dce8; border-radius:9px; color:#17385d; font-size:.78rem; font-weight:650; }
       .stButton>button:hover,.stDownloadButton>button:hover { border-color:#6c91b9; background:#edf5ff; color:#123d6a; }
+
+      @media(max-width:1220px){ .metric-grid{grid-template-columns:repeat(3,minmax(0,1fr));} }
+      @media(max-width:760px){ .block-container{padding:1.25rem .9rem 3rem;} .hero{align-items:flex-start;flex-direction:column;} .phase-track{width:100%;} .metric-grid{grid-template-columns:repeat(2,minmax(0,1fr));} }
     </style>
     <div class="top-strip"></div>
     """,
@@ -83,7 +89,7 @@ st.markdown(
 def cargar_datos() -> pd.DataFrame | None:
     try:
         conn = st.connection("gsheets", type=GSheetsConnection)
-        df = conn.read(spreadsheet=URL_GOOGLE_SHEET, worksheet="0")
+        df = conn.read(spreadsheet=URL_GOOGLE_SHEET)
         return df
     except Exception as e:
         st.error(f"Error conectando a Google Sheets: {e}")
@@ -126,6 +132,9 @@ def color_estado(valor: object) -> str:
         return "color:#ad4540;background-color:#fff0ef;font-weight:700"
     return "color:#6b7c90"
 
+# -----------------------------------------------------------------------------
+# Base de datos de trabajo
+# -----------------------------------------------------------------------------
 df_base = cargar_datos()
 if df_base is None:
     st.error("No encontré la base de datos en el enlace de Google Sheets proporcionado.")
@@ -151,6 +160,9 @@ if "editor_version" not in st.session_state:
     st.session_state.editor_version = 0
 df_global = st.session_state.forecast_data.copy()
 
+# -----------------------------------------------------------------------------
+# Filtros laterales en cascada
+# -----------------------------------------------------------------------------
 st.sidebar.markdown("## Valgardena")
 st.sidebar.caption("Filtros del panel financiero")
 df_filtrado = df_global.copy()
@@ -168,6 +180,9 @@ if st.sidebar.button("Restablecer filtros", use_container_width=True):
         st.session_state.pop(clave, None)
     st.rerun()
 
+# -----------------------------------------------------------------------------
+# Motor financiero y tributario
+# -----------------------------------------------------------------------------
 mascara_ingresos = df_filtrado["Categoría"].map(es_ingreso)
 ingresos_mes = [float(df_filtrado.loc[mascara_ingresos, mes].sum()) for mes in MESES]
 gastos_firmados_mes = [float(df_filtrado.loc[~mascara_ingresos, mes].sum()) for mes in MESES]
@@ -191,6 +206,9 @@ else:
 resultado_liquido = resultado_antes_impuestos - impuesto
 tasa_efectiva = (impuesto / resultado_antes_impuestos * 100) if resultado_antes_impuestos > 0 else 0.0
 
+# -----------------------------------------------------------------------------
+# Cabecera y tarjetas ejecutivas
+# -----------------------------------------------------------------------------
 st.markdown(
     """
     <section class="hero">
@@ -217,6 +235,9 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+# -----------------------------------------------------------------------------
+# Evolución mensual y puente tributario
+# -----------------------------------------------------------------------------
 grafico_col, impuesto_col = st.columns([3.45, 1], gap="small")
 
 with grafico_col:
@@ -305,6 +326,9 @@ with impuesto_col:
         unsafe_allow_html=True,
     )
 
+# -----------------------------------------------------------------------------
+# Editor de proyecciones
+# -----------------------------------------------------------------------------
 st.write("")
 with st.container(border=True):
     encabezado_col, controles_col = st.columns([1.55, 1.45], vertical_alignment="bottom")
@@ -348,7 +372,6 @@ with st.container(border=True):
             conn = st.connection("gsheets", type=GSheetsConnection)
             conn.update(
                 spreadsheet=URL_GOOGLE_SHEET,
-                worksheet="0",
                 data=st.session_state.forecast_data
             )
             st.toast("Forecast guardado en la nube exitosamente", icon="✅")
