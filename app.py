@@ -374,13 +374,13 @@ with st.container(border=True):
         limpiar = boton_limpiar.button("Limpiar", use_container_width=True)
         restaurar = boton_restaurar.button("Restaurar", use_container_width=True)
 
-    if actualizar:
+if actualizar:
         cargar_datos.clear()
         st.session_state.pop("forecast_data", None)
         st.session_state.editor_version += 1
         st.rerun()
 
-if guardar:
+    if guardar:
         try:
             conn = st.connection("gsheets", type=GSheetsConnection)
             conn.update(
@@ -406,7 +406,6 @@ if guardar:
         st.session_state.forecast_data = datos_restaurados
         st.session_state.editor_version += 1
         st.rerun()
-
     df_vista = df_filtrado.copy()
     if vista == "Ingresos":
         df_vista = df_vista[df_vista["Categoría"].map(es_ingreso)]
