@@ -3,7 +3,7 @@ import os
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
-
+from streamlit_gsheets import GSheetsConnection
 
 st.set_page_config(
     page_title="Forecast financiero | Valgardena",
@@ -83,16 +83,16 @@ st.markdown(
 )
 
 
-@st.cache_data
+@st.cache_data(ttl=60)
 def cargar_datos() -> pd.DataFrame | None:
-    """Prioriza el último forecast guardado y luego las fuentes originales."""
-    if os.path.exists("Forecast_Valgardena_guardado.csv"):
-        return pd.read_csv("Forecast_Valgardena_guardado.csv")
-    if os.path.exists("Dashboard_EERR_Mensual.csv"):
-        return pd.read_csv("Dashboard_EERR_Mensual.csv")
-    if os.path.exists("Dashboard.xlsx"):
-        return pd.read_excel("Dashboard.xlsx", sheet_name="EERR Mensual")
-    return None
+    try:
+        conn = st.connection("gsheets", type=GSheetsConnection)
+        # Reemplaza TU_LINK_AQUI con la URL de tu Google Sheet
+        df = conn.read(spreadsheet="TU_LINK_AQUI", worksheet="0")
+        return df
+    except Exception as e:
+        st.error(f"Falta configurar Google Sheets o el enlace es incorrecto: {e}")
+        return None
 
 
 def es_ingreso(categoria: object) -> bool:
@@ -380,9 +380,17 @@ with st.container(border=True):
         st.session_state.editor_version += 1
         st.rerun()
 
-    if guardar:
-        st.session_state.forecast_data.to_csv("Forecast_Valgardena_guardado.csv", index=False)
-        st.toast("Forecast guardado en Forecast_Valgardena_guardado.csv", icon="✅")
+if guardar:
+        try:
+            conn = st.connection("gsheets", type=GSheetsConnection)
+            conn.update(
+                spreadsheet="TU_LINK_AQUI", 
+                worksheet="0", 
+                data=st.session_state.forecast_data
+            )
+            st.toast("Forecast guardado en la nube exitosamente", icon="✅")
+        except Exception as e:
+            st.error(f"Error guardando en la nube: {e}")
 
     if limpiar:
         datos_limpios = st.session_state.forecast_data.copy()
