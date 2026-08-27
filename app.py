@@ -4,7 +4,7 @@ import plotly.graph_objects as go
 import streamlit as st
 from streamlit_gsheets import GSheetsConnection
 
-URL_GOOGLE_SHEET = "https://docs.google.com/spreadsheets/d/1_D8MgvLX8-KdaAdH35GhcI1NQPwzBwk8-8fgWSVnhxg"
+URL_GOOGLE_SHEET = "https://docs.google.com/spreadsheets/d/1_D8MgvLX8-KdaAdH35GhcI1NQPwzBwk8-8fgWSVnhxg/edit?gid=0#gid=0"
 
 st.set_page_config(
     page_title="Forecast financiero | Valgardena",
@@ -83,7 +83,7 @@ st.markdown(
 def cargar_datos() -> pd.DataFrame | None:
     try:
         conn = st.connection("gsheets", type=GSheetsConnection)
-        df = conn.read(spreadsheet=URL_GOOGLE_SHEET)
+        df = conn.read(spreadsheet=URL_GOOGLE_SHEET, worksheet="0")
         return df
     except Exception as e:
         st.error(f"Error conectando a Google Sheets: {e}")
@@ -348,6 +348,7 @@ with st.container(border=True):
             conn = st.connection("gsheets", type=GSheetsConnection)
             conn.update(
                 spreadsheet=URL_GOOGLE_SHEET,
+                worksheet="0",
                 data=st.session_state.forecast_data
             )
             st.toast("Forecast guardado en la nube exitosamente", icon="✅")
