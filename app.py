@@ -90,6 +90,7 @@ PORCENTAJE_REBAJA_14E = 0.50
 GASTOS_RECHAZADOS = 7_595_894
 
 URL_GOOGLE_SHEET = "https://docs.google.com/spreadsheets/d/1_D8MgvLX8-KdaAdH35GhcIlNQPWzBwk8-8fgWSVnhxg/edit?gid=0#gid=0"
+NOMBRE_HOJA_DATOS = "EERR Mensual"
 
 # =============================================================================
 # 1. MÓDULO DE SEGURIDAD & CONTROL DE ACCESO (ANTI-INYECCIÓN & HASHING CRIPTOGRÁFICO)
@@ -687,7 +688,11 @@ def cargar_datos() -> pd.DataFrame:
     if GSHEETS_AVAILABLE:
         try:
             conn = st.connection("gsheets", type=GSheetsConnection)
-            df = conn.read(spreadsheet=URL_GOOGLE_SHEET)
+            df = conn.read(
+                spreadsheet=URL_GOOGLE_SHEET,
+                worksheet=NOMBRE_HOJA_DATOS,
+                ttl=0,
+            )
             if df is not None and not df.empty:
                 return df
         except Exception:
@@ -993,7 +998,7 @@ with st.container(border=True):
             f"""
             <p class="section-label">Ingreso de Proyecciones</p>
             <h2 class="section-title">Forecast · {RANGO_FORECAST.capitalize()}</h2>
-            <p class="editor-copy">Haz doble clic en las celdas para modificar. En gastos, ingresa el monto positivo; el sistema lo descuenta automáticamente.</p>
+            <p class="editor-copy">Haz doble clic en las celdas para modificar. En gastos, ingresa el monto positivo; el sistema lo descuenta automáticamente. Luego presiona “Guardar en Sheet” para dejar los cambios en línea.</p>
             """,
             unsafe_allow_html=True,
         )
@@ -1012,7 +1017,7 @@ with st.container(border=True):
 
         boton_actualizar, boton_guardar, boton_limpiar, boton_restaurar = st.columns(4)
         actualizar = boton_actualizar.button("↻ Actualizar", use_container_width=True)
-        guardar = boton_guardar.button("💾 Guardar", type="primary", use_container_width=True)
+        guardar = boton_guardar.button("💾 Guardar en Sheet", type="primary", use_container_width=True)
         limpiar = boton_limpiar.button("🗑️ Limpiar", use_container_width=True)
         restaurar = boton_restaurar.button("🔄 Restaurar", use_container_width=True)
 
@@ -1026,15 +1031,40 @@ with st.container(border=True):
         if GSHEETS_AVAILABLE:
             try:
                 conn = st.connection("gsheets", type=GSheetsConnection)
+                datos_sheet = st.session_state.forecast_data.drop(
+                    columns=["Total_Original_Base"],
+                    errors="ignore",
+                ).copy()
                 conn.update(
                     spreadsheet=URL_GOOGLE_SHEET,
-                    data=st.session_state.forecast_data
+                    worksheet=NOMBRE_HOJA_DATOS,
+                    data=datos_sheet,
                 )
-                st.toast("Forecast guardado en la nube exitosamente", icon="✅")
+                cargar_datos.clear()
+                st.session_state["ultimo_guardado_sheet"] = datetime.now(
+                    ZONA_HORARIA_NEGOCIO
+                ).strftime("%d-%m-%Y %H:%M")
+                st.toast(
+                    f"Cambios guardados en '{NOMBRE_HOJA_DATOS}'",
+                    icon="✅",
+                )
             except Exception as e:
-                st.error(f"Error guardando en Google Sheets: {e}")
+                st.error(
+                    "No fue posible guardar en Google Sheets. Verifica que la cuenta "
+                    "de servicio esté compartida como Editora y que la hoja se llame "
+                    f"'{NOMBRE_HOJA_DATOS}'. Detalle: {e}"
+                )
         else:
-            st.toast("Edición guardada en la sesión local", icon="✅")
+            st.error(
+                "La conexión con Google Sheets no está disponible. Los cambios siguen "
+                "en esta sesión, pero aún no se han guardado en línea."
+            )
+
+    if "ultimo_guardado_sheet" in st.session_state:
+        st.caption(
+            f"✅ Último guardado en '{NOMBRE_HOJA_DATOS}': "
+            f"{st.session_state['ultimo_guardado_sheet']} (hora de Chile)."
+        )
 
     if limpiar:
         datos_limpios = st.session_state.forecast_data.copy()
