@@ -4,7 +4,10 @@ import plotly.graph_objects as go
 import streamlit as st
 from streamlit_gsheets import GSheetsConnection
 
-URL_GOOGLE_SHEET = "https://docs.google.com/spreadsheets/d/1_D8MgvLX8-KdaAdH35GhcI1NQPwzBwk8-8fgWSVnhxg/edit?gid=0#gid=0"
+# =============================================================================
+# ⚠️ PEGA TU ENLACE AQUÍ ABAJO ENTRE LAS COMILLAS ⚠️
+# =============================================================================
+URL_GOOGLE_SHEET = "https://docs.google.com/spreadsheets/d/1_D8MgvLX8-KdaAdH35GhcI1NQPwzBwk8-8fgWSVnhxg/edit"
 
 st.set_page_config(
     page_title="Forecast financiero | Valgardena",
@@ -22,7 +25,7 @@ st.sidebar.markdown("## Configuración")
 mes_inicio_forecast = st.sidebar.selectbox(
     "▶ Inicio del Forecast",
     options=TODOS_LOS_MESES,
-    index=8,
+    index=8, # 8 equivale a "Sep"
     help="Elige el mes donde comienzan las proyecciones. Los meses anteriores se bloquearán como históricos."
 )
 
@@ -95,11 +98,12 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-@st.cache_data(ttl=60)
-def cargar_datos() -> pd.DataFrame | None:
+@st.cache_data(ttl=10) # Tiempo bajado a 10 segundos para no arrastrar errores en memoria
+def cargar_datos(url) -> pd.DataFrame | None:
     try:
         conn = st.connection("gsheets", type=GSheetsConnection)
-        df = conn.read(spreadsheet=URL_GOOGLE_SHEET)
+        # Eliminada la restricción de worksheet para evitar errores 404
+        df = conn.read(spreadsheet=url)
         return df
     except Exception as e:
         st.error(f"Error conectando a Google Sheets: {e}")
@@ -142,9 +146,9 @@ def color_estado(valor: object) -> str:
         return "color:#ad4540;background-color:#fff0ef;font-weight:700"
     return "color:#6b7c90"
 
-df_base = cargar_datos()
+df_base = cargar_datos(URL_GOOGLE_SHEET)
 if df_base is None:
-    st.error("No encontré la base de datos en el enlace de Google Sheets proporcionado.")
+    st.error("No encontré la base de datos. Verifica el enlace y asegúrate de haberle dado acceso de Editor al correo del robot.")
     st.stop()
 
 faltantes = [columna for columna in COLUMNAS_TEXTO if columna not in df_base.columns]
