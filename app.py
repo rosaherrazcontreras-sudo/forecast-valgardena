@@ -7,7 +7,7 @@ from streamlit_gsheets import GSheetsConnection
 # =============================================================================
 # ⚠️ PEGA TU ENLACE AQUÍ ABAJO ENTRE LAS COMILLAS ⚠️
 # =============================================================================
-URL_GOOGLE_SHEET = "https://docs.google.com/spreadsheets/d/1_D8MgvLX8-KdaAdH35GhcI1NQPwzBwk8-8fgWSVnhxg/edit"
+URL_GOOGLE_SHEET = "https://docs.google.com/spreadsheets/d/1_D8MgvLX8-KdaAdH35GhcI1NQPwzBwk8-8fgWSVnhxg/edit?gid=0#gid=0"
 
 st.set_page_config(
     page_title="Forecast financiero | Valgardena",
