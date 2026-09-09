@@ -22,7 +22,7 @@ st.sidebar.markdown("## Configuración")
 mes_inicio_forecast = st.sidebar.selectbox(
     "▶ Inicio del Forecast",
     options=TODOS_LOS_MESES,
-    index=8, # Por defecto arranca en "Sep" (índice 8)
+    index=8,
     help="Elige el mes donde comienzan las proyecciones. Los meses anteriores se bloquearán como históricos."
 )
 
@@ -98,7 +98,7 @@ st.markdown(
 def cargar_datos() -> pd.DataFrame | None:
     try:
         conn = st.connection("gsheets", type=GSheetsConnection)
-        df = conn.read(spreadsheet=URL_GOOGLE_SHEET, worksheet="0")
+        df = conn.read(spreadsheet=URL_GOOGLE_SHEET)
         return df
     except Exception as e:
         st.error(f"Error conectando a Google Sheets: {e}")
@@ -369,7 +369,6 @@ with st.container(border=True):
             conn = st.connection("gsheets", type=GSheetsConnection)
             conn.update(
                 spreadsheet=URL_GOOGLE_SHEET,
-                worksheet="0",
                 data=st.session_state.forecast_data
             )
             st.toast("Forecast guardado en la nube exitosamente", icon="✅")
