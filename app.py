@@ -90,7 +90,9 @@ PORCENTAJE_REBAJA_14E = 0.50
 GASTOS_RECHAZADOS = 7_595_894
 
 URL_GOOGLE_SHEET = "https://docs.google.com/spreadsheets/d/1_D8MgvLX8-KdaAdH35GhcIlNQPWzBwk8-8fgWSVnhxg/edit?gid=0#gid=0"
-NOMBRE_HOJA_DATOS = "EERR Mensual"
+INDICE_HOJA_DATOS = 0
+ETIQUETA_HOJA_DATOS = "pestaña principal"
+VERSION_FUENTE_DATOS = "google_sheet_principal_v1"
 
 # =============================================================================
 # 1. MÓDULO DE SEGURIDAD & CONTROL DE ACCESO (ANTI-INYECCIÓN & HASHING CRIPTOGRÁFICO)
@@ -634,69 +636,26 @@ with col_u2:
 
 
 # =============================================================================
-# 5. CARGA Y TRANSFORMACIÓN DE DATOS (CON FALLBACK RESILIENTE)
+# 5. CARGA Y TRANSFORMACIÓN DE DATOS
 # =============================================================================
-def generate_mock_backup() -> pd.DataFrame:
-    rows = [
-        {
-            'Categoría': '1. INGRESOS OPERACIONALES', 'Área': 'SANTIAGO', 'Grupo': 'SERVICIOS CONTABLES',
-            'Cuenta / Ítem': 'Honorarios Mensuales Asesoría', 'Detalle / Tipo': 'Servicio Recurrente',
-            'Ene': 6500000, 'Feb': 7100000, 'Mar': 6800000, 'Abr': 7500000, 'May': 7200000, 'Jun': 7400000, 'Jul': 7600000,
-            'Ago': 7600000, 'Sep': 7600000, 'Oct': 7600000, 'Nov': 7600000, 'Dic': 7600000
-        },
-        {
-            'Categoría': '1. INGRESOS OPERACIONALES', 'Área': 'FUNDO', 'Grupo': 'ASESORÍA TRIBUTARIA',
-            'Cuenta / Ítem': 'Planificación Fiscal Anual', 'Detalle / Tipo': 'Proyecto Especial',
-            'Ene': 4200000, 'Feb': 5300000, 'Mar': 4500000, 'Abr': 5800000, 'May': 5000000, 'Jun': 5200000, 'Jul': 5500000,
-            'Ago': 5500000, 'Sep': 5500000, 'Oct': 5500000, 'Nov': 5500000, 'Dic': 5500000
-        },
-        {
-            'Categoría': '1.2 VENTAS', 'Área': 'FUNDO', 'Grupo': 'EXPLOTACIÓN AGRÍCOLA',
-            'Cuenta / Ítem': 'Venta Bosque Pino & Maderas', 'Detalle / Tipo': 'Venta Directa',
-            'Ene': 0, 'Feb': 8900000, 'Mar': 0, 'Abr': 9200000, 'May': 0, 'Jun': 4500000, 'Jul': 0,
-            'Ago': 6000000, 'Sep': 0, 'Oct': 8000000, 'Nov': 0, 'Dic': 10000000
-        },
-        {
-            'Categoría': '1.1 ARRIENDOS', 'Área': 'SANTIAGO', 'Grupo': 'INMUEBLE',
-            'Cuenta / Ítem': 'Arriendo Oficinas Providencia', 'Detalle / Tipo': 'Infraestructura',
-            'Ene': -1500000, 'Feb': -1500000, 'Mar': -1500000, 'Abr': -1500000, 'May': -1500000, 'Jun': -1500000, 'Jul': -1500000,
-            'Ago': -1500000, 'Sep': -1500000, 'Oct': -1500000, 'Nov': -1500000, 'Dic': -1500000
-        },
-        {
-            'Categoría': '1.3 GASTOS BÁSICOS', 'Área': 'SANTIAGO', 'Grupo': 'SUMINISTROS',
-            'Cuenta / Ítem': 'Luz, Agua y Conectividad', 'Detalle / Tipo': 'Servicios Básicos',
-            'Ene': -395000, 'Feb': -420000, 'Mar': -405000, 'Abr': -430000, 'May': -410000, 'Jun': -440000, 'Jul': -425000,
-            'Ago': -430000, 'Sep': -430000, 'Oct': -430000, 'Nov': -430000, 'Dic': -430000
-        },
-        {
-            'Categoría': '1.4 ADMINISTRACION Y TI', 'Área': 'SANTIAGO', 'Grupo': 'TECNOLOGÍA',
-            'Cuenta / Ítem': 'Licencias Cloud & AWS', 'Detalle / Tipo': 'Software Corporativo',
-            'Ene': -420000, 'Feb': -380000, 'Mar': -290000, 'Abr': -350000, 'May': -360000, 'Jun': -370000, 'Jul': -380000,
-            'Ago': -380000, 'Sep': -380000, 'Oct': -380000, 'Nov': -380000, 'Dic': -380000
-        },
-        {
-            'Categoría': '1.5 HONORARIOS PROFESIONALES', 'Área': 'FUNDO', 'Grupo': 'PROFESIONALES',
-            'Cuenta / Ítem': 'Asesoría Agronómica y Peritajes', 'Detalle / Tipo': 'Honorarios Directos',
-            'Ene': -650000, 'Feb': -520000, 'Mar': -700000, 'Abr': -850000, 'May': -600000, 'Jun': -650000, 'Jul': -700000,
-            'Ago': -700000, 'Sep': -700000, 'Oct': -700000, 'Nov': -700000, 'Dic': -700000
-        }
-    ]
-    return pd.DataFrame(rows)
-
 @st.cache_data(ttl=60)
 def cargar_datos() -> pd.DataFrame:
+    error_google = None
     if GSHEETS_AVAILABLE:
         try:
             conn = st.connection("gsheets", type=GSheetsConnection)
             df = conn.read(
                 spreadsheet=URL_GOOGLE_SHEET,
-                worksheet=NOMBRE_HOJA_DATOS,
+                worksheet=INDICE_HOJA_DATOS,
                 ttl=0,
             )
             if df is not None and not df.empty:
                 return df
-        except Exception:
-            pass
+            error_google = "la pestaña principal no contiene datos"
+        except Exception as error:
+            error_google = str(error)
+    else:
+        error_google = "no está instalada la conexión de Google Sheets"
 
     excel_path = "Dashboard.xlsx"
     if os.path.exists(excel_path):
@@ -706,7 +665,7 @@ def cargar_datos() -> pd.DataFrame:
         except Exception:
             pass
 
-    return generate_mock_backup()
+    raise RuntimeError(error_google or "no se recibió información desde Google Sheets")
 
 def es_ingreso(categoria: object) -> bool:
     texto = str(categoria).upper()
@@ -749,9 +708,17 @@ def color_estado(valor: object) -> str:
 # =============================================================================
 # 6. PREPARACIÓN Y FILTROS LATERALES
 # =============================================================================
-df_base = cargar_datos()
-if df_base is None:
-    st.error("No se pudo cargar la base de datos.")
+try:
+    df_base = cargar_datos()
+except Exception as error:
+    st.error(
+        "No se pudo conectar con el Google Sheet. La carga se detuvo para evitar "
+        "mostrar datos de demostración."
+    )
+    st.info(
+        "Revisa la URL configurada, los Secrets de Streamlit y el permiso de Editor "
+        f"de la cuenta de servicio. Detalle: {error}"
+    )
     st.stop()
 
 df_base.columns = [str(c).strip() for c in df_base.columns]
@@ -772,10 +739,15 @@ for mes in MESES:
 if "Total_Original_Base" not in df_base.columns:
     df_base["Total_Original_Base"] = df_base[MESES].sum(axis=1)
 
-if "forecast_data" not in st.session_state:
-    st.session_state.forecast_data = df_base.copy()
 if "editor_version" not in st.session_state:
     st.session_state.editor_version = 0
+if (
+    "forecast_data" not in st.session_state
+    or st.session_state.get("version_fuente_datos") != VERSION_FUENTE_DATOS
+):
+    st.session_state.forecast_data = df_base.copy()
+    st.session_state.version_fuente_datos = VERSION_FUENTE_DATOS
+    st.session_state.editor_version += 1
 
 df_global = st.session_state.forecast_data.copy()
 
@@ -1037,7 +1009,7 @@ with st.container(border=True):
                 ).copy()
                 conn.update(
                     spreadsheet=URL_GOOGLE_SHEET,
-                    worksheet=NOMBRE_HOJA_DATOS,
+                    worksheet=INDICE_HOJA_DATOS,
                     data=datos_sheet,
                 )
                 cargar_datos.clear()
@@ -1045,14 +1017,14 @@ with st.container(border=True):
                     ZONA_HORARIA_NEGOCIO
                 ).strftime("%d-%m-%Y %H:%M")
                 st.toast(
-                    f"Cambios guardados en '{NOMBRE_HOJA_DATOS}'",
+                    "Cambios guardados en la pestaña principal del Sheet",
                     icon="✅",
                 )
             except Exception as e:
                 st.error(
                     "No fue posible guardar en Google Sheets. Verifica que la cuenta "
-                    "de servicio esté compartida como Editora y que la hoja se llame "
-                    f"'{NOMBRE_HOJA_DATOS}'. Detalle: {e}"
+                    "de servicio esté compartida como Editora. "
+                    f"Detalle: {e}"
                 )
         else:
             st.error(
@@ -1062,7 +1034,7 @@ with st.container(border=True):
 
     if "ultimo_guardado_sheet" in st.session_state:
         st.caption(
-            f"✅ Último guardado en '{NOMBRE_HOJA_DATOS}': "
+            f"✅ Último guardado en la {ETIQUETA_HOJA_DATOS}: "
             f"{st.session_state['ultimo_guardado_sheet']} (hora de Chile)."
         )
 
