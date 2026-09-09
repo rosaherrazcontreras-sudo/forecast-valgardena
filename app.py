@@ -4,7 +4,7 @@ import plotly.graph_objects as go
 import streamlit as st
 from streamlit_gsheets import GSheetsConnection
 
-URL_GOOGLE_SHEET = "https://docs.google.com/spreadsheets/d/1_D8MgvLX8-KdaAdH35GhcIlNQPWzBwk8-8fgWSVnhxg/edit?gid=0#gid=0"
+URL_GOOGLE_SHEET = "https://docs.google.com/spreadsheets/d/1_D8MgvLX8-KdaAdH35GhcI1NQPwzBwk8-8fgWSVnhxg/edit?gid=0#gid=0"
 
 st.set_page_config(
     page_title="Forecast financiero | Valgardena",
@@ -46,7 +46,8 @@ st.markdown(
       html, body, button, input, textarea, select { font-family:"Segoe UI",Arial,sans-serif; }
       .stApp { background:var(--wash); color: #102944; }
       [data-testid="stHeader"] { height:0; background:transparent; }
-      #MainMenu, footer, [data-testid="stDeployButton"] { visibility:hidden; }
+      /* Menú visible para poder cambiar a modo claro */
+      footer, [data-testid="stDeployButton"] { visibility:hidden; }
       .block-container { max-width:1680px; padding:1.75rem 2.8rem 3.5rem; background: var(--wash); }
       .top-strip { position:fixed; z-index:999; inset:0 0 auto; height:10px; background:#0b2747; }
 
@@ -276,7 +277,6 @@ with grafico_col:
             )
         )
         
-        # Área sombreada dinámica en el gráfico
         inicio_sombreado = len(MESES_HIST) - 0.5
         figura.add_vrect(
             x0=inicio_sombreado, x1=11.5, fillcolor="#e7f1ff", opacity=0.72,
