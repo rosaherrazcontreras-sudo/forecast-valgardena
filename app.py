@@ -671,6 +671,35 @@ def es_ingreso(categoria: object) -> bool:
     texto = str(categoria).upper()
     return any(palabra in texto for palabra in ("INGRESO", "VENTA", "GANANCIA"))
 
+def agregar_concepto(datos: pd.DataFrame, cuenta: tuple, concepto: str,
+                     montos: dict, meses_proy: list[str]) -> pd.DataFrame:
+    """Agrega una fila sin modificar índices existentes ni períodos cerrados."""
+    concepto = concepto.strip()
+    if not concepto:
+        raise ValueError("Escribe el nombre del nuevo concepto.")
+    identidad = dict(zip(COLUMNAS_TEXTO[:4], cuenta))
+    identidad["Detalle / Tipo"] = concepto
+    coincidencias = pd.Series(True, index=datos.index)
+    for columna, valor in identidad.items():
+        coincidencias &= datos[columna].astype(str).str.strip().str.casefold().eq(
+            str(valor).strip().casefold()
+        )
+    if coincidencias.any():
+        raise ValueError("Ese concepto ya existe en esta cuenta. Edita sus montos en la tabla.")
+    if not meses_proy:
+        raise ValueError("El ejercicio está cerrado; no quedan meses de forecast editables.")
+    fila = {columna: None for columna in datos.columns}
+    fila.update(identidad)
+    fila.update({mes: 0.0 for mes in MESES})
+    fila["Total_Original_Base"] = 0.0
+    for mes in meses_proy:
+        monto = float(montos.get(mes, 0.0))
+        if not np.isfinite(monto) or monto < 0:
+            raise ValueError("Los montos deben ser números positivos o cero.")
+        fila[mes] = monto if es_ingreso(cuenta[0]) else -monto
+    nuevo_indice = int(datos.index.max()) + 1 if len(datos) else 0
+    return pd.concat([datos, pd.DataFrame([fila], index=[nuevo_indice])])
+
 def moneda(valor: float) -> str:
     signo = "−" if valor < 0 else ""
     return f"{signo}${abs(valor):,.0f}".replace(",", ".")
@@ -1122,6 +1151,54 @@ with st.container(border=True):
         st.session_state.forecast_data = datos_actualizados
         st.session_state.editor_version += 1
         st.rerun()
+
+    if "concepto_agregado" in st.session_state:
+        st.success(st.session_state.pop("concepto_agregado"))
+
+    with st.expander("➕ Agregar nuevo concepto", expanded=False):
+        st.caption(
+            "Selecciona la cuenta y escribe el concepto en Detalle / Tipo. "
+            "Ingresa montos positivos; los gastos se descuentan automáticamente. "
+            "Los meses históricos del nuevo concepto quedan en cero."
+        )
+        cuentas = list(
+            df_global[COLUMNAS_TEXTO[:4]].drop_duplicates().itertuples(index=False, name=None)
+        )
+        if cuentas and MESES_PROY:
+            with st.form("agregar_concepto_form", clear_on_submit=False):
+                cuenta_nueva = st.selectbox(
+                    "Cuenta del nuevo concepto", cuentas,
+                    format_func=lambda cuenta: " / ".join(str(valor) for valor in cuenta),
+                    help="Categoría / Área / Grupo / Cuenta. Incluye todas las cuentas, aunque haya filtros activos.",
+                )
+                concepto_nuevo = st.text_input("Detalle / Tipo del nuevo concepto", max_chars=200)
+                montos_nuevos = {}
+                columnas_montos = st.columns(min(4, len(MESES_PROY)))
+                for posicion, mes in enumerate(MESES_PROY):
+                    with columnas_montos[posicion % len(columnas_montos)]:
+                        montos_nuevos[mes] = st.number_input(
+                            f"{mes} ($)", min_value=0.0, value=0.0, step=1.0,
+                            format="%.0f", key=f"nuevo_concepto_{mes}",
+                        )
+                agregar = st.form_submit_button("Agregar concepto", type="primary")
+            if agregar:
+                try:
+                    nuevos_datos = agregar_concepto(
+                        st.session_state.forecast_data, cuenta_nueva,
+                        concepto_nuevo, montos_nuevos, MESES_PROY,
+                    )
+                except ValueError as error:
+                    st.error(str(error))
+                else:
+                    st.session_state.forecast_data = nuevos_datos
+                    st.session_state.editor_version += 1
+                    st.session_state["concepto_agregado"] = (
+                        "Concepto agregado. Presiona Guardar en Sheet para conservarlo en línea. "
+                        "Si no aparece en la tabla, revisa los filtros y la vista de ingresos/gastos."
+                    )
+                    st.rerun()
+        else:
+            st.info("Se necesita una cuenta existente y meses de forecast abiertos para agregar conceptos.")
 
     st.markdown("<br>", unsafe_allow_html=True)
     descarga = st.session_state.forecast_data.to_csv(index=False).encode("utf-8-sig")
