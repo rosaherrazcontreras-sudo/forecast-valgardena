@@ -1,0 +1,16 @@
+AGREGAR CONCEPTOS AL FORECAST — CAMPOS LIBRES
+
+Reemplaza app.py en tu proyecto por la versión incluida y reinicia o despliega la aplicación.
+
+Debajo de la tabla abre «Agregar nuevo concepto» y completa los cinco campos:
+1. Categoría: selecciona Ingreso o Egreso.
+2. Área: texto libre.
+3. Grupo: texto libre.
+4. Cuenta / Ítem: texto libre.
+5. Detalle / Tipo: texto libre.
+
+No es necesario elegir una cuenta existente. Completa los cinco campos e ingresa los montos mensuales positivos. El sistema descuenta los egresos automáticamente y mantiene los meses históricos en cero para la nueva fila.
+
+Presiona «Agregar concepto» y luego «Guardar en Sheet» para conservarlo en línea. Si no aparece la fila, revisa los filtros y la vista seleccionada. Actualizar los datos o cerrar sesión antes de guardar descarta los cambios pendientes.
+
+Validación: sintaxis revisada y seis pruebas de lógica aprobadas, incluyendo campos libres y signo de Ingreso/Egreso. No se probó la interfaz completa ni la conexión real a Google Sheets desde este entorno.

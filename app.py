@@ -677,8 +677,12 @@ def agregar_concepto(datos: pd.DataFrame, cuenta: tuple, concepto: str,
     concepto = concepto.strip()
     if not concepto:
         raise ValueError("Escribe el nombre del nuevo concepto.")
-    identidad = dict(zip(COLUMNAS_TEXTO[:4], cuenta))
+    identidad = {columna: str(valor).strip()
+                 for columna, valor in zip(COLUMNAS_TEXTO[:4], cuenta)}
     identidad["Detalle / Tipo"] = concepto
+    for columna in COLUMNAS_TEXTO:
+        if not identidad.get(columna):
+            raise ValueError(f"Completa el campo {columna}.")
     coincidencias = pd.Series(True, index=datos.index)
     for columna, valor in identidad.items():
         coincidencias &= datos[columna].astype(str).str.strip().str.casefold().eq(
@@ -1157,21 +1161,22 @@ with st.container(border=True):
 
     with st.expander("➕ Agregar nuevo concepto", expanded=False):
         st.caption(
-            "Selecciona la cuenta y escribe el concepto en Detalle / Tipo. "
-            "Ingresa montos positivos; los gastos se descuentan automáticamente. "
+            "Elige Ingreso o Egreso y escribe libremente Área, Grupo, Cuenta / Ítem "
+            "y Detalle / Tipo, sin depender de cuentas existentes. "
+            "Ingresa montos positivos; los egresos se descuentan automáticamente. "
             "Los meses históricos del nuevo concepto quedan en cero."
         )
-        cuentas = list(
-            df_global[COLUMNAS_TEXTO[:4]].drop_duplicates().itertuples(index=False, name=None)
-        )
-        if cuentas and MESES_PROY:
+        if MESES_PROY:
             with st.form("agregar_concepto_form", clear_on_submit=False):
-                cuenta_nueva = st.selectbox(
-                    "Cuenta del nuevo concepto", cuentas,
-                    format_func=lambda cuenta: " / ".join(str(valor) for valor in cuenta),
-                    help="Categoría / Área / Grupo / Cuenta. Incluye todas las cuentas, aunque haya filtros activos.",
+                categoria_nueva = st.selectbox(
+                    "Categoría", ["Ingreso", "Egreso"],
+                    key="nuevo_concepto_categoria",
                 )
-                concepto_nuevo = st.text_input("Detalle / Tipo del nuevo concepto", max_chars=200)
+                area_nueva = st.text_input("Área", max_chars=200, key="nuevo_concepto_area")
+                grupo_nuevo = st.text_input("Grupo", max_chars=200, key="nuevo_concepto_grupo")
+                item_nuevo = st.text_input("Cuenta / Ítem", max_chars=200, key="nuevo_concepto_cuenta")
+                concepto_nuevo = st.text_input("Detalle / Tipo", max_chars=200, key="nuevo_concepto_detalle")
+                cuenta_nueva = (categoria_nueva, area_nueva, grupo_nuevo, item_nuevo)
                 montos_nuevos = {}
                 columnas_montos = st.columns(min(4, len(MESES_PROY)))
                 for posicion, mes in enumerate(MESES_PROY):
@@ -1198,7 +1203,7 @@ with st.container(border=True):
                     )
                     st.rerun()
         else:
-            st.info("Se necesita una cuenta existente y meses de forecast abiertos para agregar conceptos.")
+            st.info("El ejercicio está cerrado; no quedan meses de forecast editables.")
 
     st.markdown("<br>", unsafe_allow_html=True)
     descarga = st.session_state.forecast_data.to_csv(index=False).encode("utf-8-sig")
