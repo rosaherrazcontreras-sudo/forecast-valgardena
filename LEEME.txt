@@ -14,3 +14,8 @@ No es necesario elegir una cuenta existente. Completa los cinco campos e ingresa
 Presiona «Agregar concepto» y luego «Guardar en Sheet» para conservarlo en línea. Si no aparece la fila, revisa los filtros y la vista seleccionada. Actualizar los datos o cerrar sesión antes de guardar descarta los cambios pendientes.
 
 Validación: sintaxis revisada y seis pruebas de lógica aprobadas, incluyendo campos libres y signo de Ingreso/Egreso. No se probó la interfaz completa ni la conexión real a Google Sheets desde este entorno.
+
+CORRECCIÓN DE VISIBILIDAD
+Se corrigió el contraste de las etiquetas y campos del formulario. La configuración original usaba tema claro con texto oscuro, mientras la aplicación pintaba el fondo oscuro.
+Reemplaza app.py y también .streamlit/config.toml con los archivos incluidos. Reinicia la aplicación para aplicar el tema oscuro. Los nombres de los campos y el texto ingresado usan un color claro sobre fondo oscuro.
+Se validó la sintaxis de ambos archivos. Falta comprobar visualmente el resultado en la aplicación desplegada.
